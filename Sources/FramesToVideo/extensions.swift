@@ -1,6 +1,6 @@
-import Foundation
-import Cocoa
 import ArgumentParser
+import Cocoa
+import Foundation
 
 extension URL: ExpressibleByArgument {
     public init?(argument: String) {
@@ -9,12 +9,15 @@ extension URL: ExpressibleByArgument {
             self = URL(fileURLWithPath: path)
         } else if path.starts(with: "~/") {
             if #available(OSX 10.12, *) {
-                self = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(path.replacingOccurrences(of: "~/", with: ""))
+                self = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(path.replacingOccurrences(
+                    of: "~/",
+                    with: ""
+                ))
             } else {
                 return nil
             }
         } else {
-            let callURL: URL = URL(fileURLWithPath: CommandLine.arguments.first!).deletingLastPathComponent()
+            let callURL: URL = .init(fileURLWithPath: CommandLine.arguments.first!).deletingLastPathComponent()
             if argument == "." {
                 self = callURL
             } else {

@@ -1,6 +1,8 @@
-import Foundation
-import Cocoa
 import ArgumentParser
+import Cocoa
+import Foundation
+
+// MARK: - URL + ExpressibleByArgument
 
 extension URL: ExpressibleByArgument {
     public init?(argument: String) {
@@ -9,12 +11,15 @@ extension URL: ExpressibleByArgument {
             self = URL(fileURLWithPath: path)
         } else if path.starts(with: "~/") {
             if #available(OSX 10.12, *) {
-                self = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(path.replacingOccurrences(of: "~/", with: ""))
+                self = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(path.replacingOccurrences(
+                    of: "~/",
+                    with: ""
+                ))
             } else {
                 return nil
             }
         } else {
-            let callURL: URL = URL(fileURLWithPath: CommandLine.arguments.first!).deletingLastPathComponent()
+            let callURL: URL = .init(fileURLWithPath: CommandLine.arguments.first!).deletingLastPathComponent()
             if argument == "." {
                 self = callURL
             } else {
@@ -24,16 +29,16 @@ extension URL: ExpressibleByArgument {
     }
 }
 
-
-extension String {
-    public func zfill(_ length: Int) -> String {
+public extension String {
+    func zfill(_ length: Int) -> String {
         let diff = (length - count)
         let prefix = (diff > 0 ? String(repeating: "0", count: diff) : "")
-        return (prefix + self)
+        return prefix + self
     }
-    public func sfill(_ length: Int) -> String {
+
+    func sfill(_ length: Int) -> String {
         let diff = (length - count)
         let prefix = (diff > 0 ? String(repeating: " ", count: diff) : "")
-        return (prefix + self)
+        return prefix + self
     }
 }

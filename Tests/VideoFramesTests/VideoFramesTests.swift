@@ -1,23 +1,23 @@
-import XCTest
 @testable import VideoFrames
+import XCTest
 
 final class VideoFramesTests: XCTestCase {
-    
     var repoURL: URL!
     var videoURL: URL!
-    
+
     override func setUp() {
         #if os(macOS)
-        if #available(OSX 10.12, *) {
-            repoURL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Code/Frameworks/Development/VideoFrames")
-        }
+            if #available(OSX 10.12, *) {
+                repoURL = FileManager.default.homeDirectoryForCurrentUser
+                    .appendingPathComponent("Code/Frameworks/Development/VideoFrames")
+            }
         #endif
-        videoURL = repoURL.appendingPathComponent("Resources/Count.mov")
-        XCTAssert(FileManager.default.fileExists(atPath: videoURL.path))
+        self.videoURL = self.repoURL.appendingPathComponent("Resources/Count.mov")
+        XCTAssert(FileManager.default.fileExists(atPath: self.videoURL.path))
     }
-    
+
     #if os(macOS)
-    
+
 //    func testConvertVideoToFramesAsync() {
 //        let expectation = self.expectation(description: "Render")
 //        var frames: [Int] = []
@@ -37,20 +37,19 @@ final class VideoFramesTests: XCTestCase {
 //        print(frames)
 //        XCTAssertEqual(frames.count, 100)
 //    }
-    
-    func testConvertVideoToFrames() {
-        let frames: [NSImage] = try! convertVideoToFrames(from: videoURL)
-        XCTAssertEqual(frames.count, 100)
-    }
 
-    static var allTests = [
-        ("testConvertVideoToFrames", testConvertVideoToFrames),
-    ]
-    
+        func testConvertVideoToFrames() {
+            let frames: [NSImage] = try! convertVideoToFrames(from: self.videoURL)
+            XCTAssertEqual(frames.count, 100)
+        }
+
+        static var allTests = [
+            ("testConvertVideoToFrames", testConvertVideoToFrames),
+        ]
+
     #else
-    
-    static var allTests: [(String, () -> ())] = []
-    
+
+        static var allTests: [(String, () -> Void)] = []
+
     #endif
-    
 }

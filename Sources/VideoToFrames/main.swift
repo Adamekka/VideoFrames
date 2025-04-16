@@ -1,7 +1,9 @@
-import Foundation
-import Cocoa
-import VideoFrames
 import ArgumentParser
+import Cocoa
+import Foundation
+import VideoFrames
+
+// MARK: - VideoToFramesError
 
 enum VideoToFramesError: Error {
     case videoNotFound
@@ -9,79 +11,78 @@ enum VideoToFramesError: Error {
     case unsupportedImageFormat
 }
 
+// MARK: - ImageFormat
+
 enum ImageFormat {
     case png
     case jpg(Double)
     case tiff
     var ext: String {
         switch self {
-        case .png: return "png"
-        case .jpg: return "jpg"
-        case .tiff: return "tiff"
+            case .png: "png"
+            case .jpg: "jpg"
+            case .tiff: "tiff"
         }
     }
+
     var storageType: NSBitmapImageRep.FileType {
         switch self {
-        case .png: return .png
-        case .jpg: return .jpeg
-        case .tiff: return .tiff
+            case .png: .png
+            case .jpg: .jpeg
+            case .tiff: .tiff
         }
     }
+
     var properties: [NSBitmapImageRep.PropertyKey: Any] {
         switch self {
-        case .jpg(let quality):
-            return [.compressionFactor: quality]
-        default:
-            return [:]
+            case let .jpg(quality):
+                [.compressionFactor: quality]
+            default:
+                [:]
         }
     }
 }
 
-struct VideoToFrames: ParsableCommand {
+// MARK: - VideoToFrames
 
-    @Argument()
-    var video: URL
-    
-    @Argument()
-    var folder: URL
-    
-    @Option()
-    var format: String?
-    
-    @Option()
-    var quality: Double?
-    
-    @Flag()
-    var force: Bool
-    
+struct VideoToFrames: ParsableCommand {
+    @Argument() var video: URL
+
+    @Argument() var folder: URL
+
+    @Option() var format: String?
+
+    @Option() var quality: Double?
+
+    @Flag() var force: Bool
+
     func run() throws {
-        
         let startDate = Date()
-        
-        guard FileManager.default.fileExists(atPath: video.path) else {
+
+        guard FileManager.default.fileExists(atPath: self.video.path) else {
             throw VideoToFramesError.videoNotFound
         }
-        if !FileManager.default.fileExists(atPath: folder.path) {
-            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        if !FileManager.default.fileExists(atPath: self.folder.path) {
+            try FileManager.default.createDirectory(at: self.folder, withIntermediateDirectories: true)
         }
-        
-        let videoName: String = video.deletingPathExtension().lastPathComponent
-        
+
+        let videoName: String = self.video.deletingPathExtension().lastPathComponent
+
         let imageFormat: ImageFormat
-        if format == nil {
+        if self.format == nil {
             imageFormat = .jpg(0.8)
-        } else if format == ImageFormat.png.ext {
+        } else if self.format == ImageFormat.png.ext {
             imageFormat = .png
-        } else if format == ImageFormat.jpg(0).ext {
-            imageFormat = .jpg(quality ?? 0.8)
-        } else if format == ImageFormat.tiff.ext {
+        } else if self.format == ImageFormat.jpg(0).ext {
+            imageFormat = .jpg(self.quality ?? 0.8)
+        } else if self.format == ImageFormat.tiff.ext {
             imageFormat = .tiff
         } else {
             print("supported image formats are png, jpg and tiff.")
             throw VideoToFramesError.unsupportedImageFormat
         }
-        
-        try convertVideoToFramesSync(from: video, force: force, frame: { image, index, count in
+
+        try convertVideoToFramesSync(from: self.video, force: self.force, frame: { image, index, count in
             logBar(at: index, count: count, from: startDate)
             let name: String = "\(videoName)_\("\(index)".zfill(6)).\(imageFormat.ext)"
             let url: URL = self.folder.appendingPathComponent(name)
@@ -91,17 +92,20 @@ struct VideoToFrames: ParsableCommand {
             guard let bitmap = NSBitmapImageRep(data: rep) else {
                 throw VideoToFramesError.videoFrameConversionFail("bitmap not found")
             }
-            guard let data: Data = bitmap.representation(using: imageFormat.storageType,
-                                                         properties: imageFormat.properties) else {
+            guard
+                let data: Data = bitmap.representation(
+                    using: imageFormat.storageType,
+                    properties: imageFormat.properties
+                ) else
+            {
                 throw VideoToFramesError.videoFrameConversionFail("rep not found")
             }
             try data.write(to: url)
             if index + 1 == count {
-                logBar(at: index, count: count, from: startDate, clear: false)                
+                logBar(at: index, count: count, from: startDate, clear: false)
             }
         })
     }
-    
 }
 
 VideoToFrames.main()
