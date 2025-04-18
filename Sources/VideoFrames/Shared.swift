@@ -6,22 +6,23 @@
 @preconcurrency import AVFoundation
 
 #if os(macOS)
-    public typealias _Image = NSImage
+    public typealias _Image = NSImage // swiftlint:disable:this type_name
 #else
-    public typealias _Image = UIImage
+    public typealias _Image = UIImage // swiftlint:disable:this type_name
 #endif
 
 // MARK: - VideoActor
 
 @globalActor
 actor VideoActor {
-    static let shared = VideoActor()
+    static let shared: VideoActor = .init()
 }
 
 // MARK: - VideoFrame
 
 public struct VideoFrame: @unchecked Sendable {
     public let image: _Image
+
     public init(image: _Image) {
         self.image = image
     }
@@ -43,6 +44,7 @@ public struct VideoInfo: Sendable {
     public let size: CGSize
     public var frameCount: Int { Int(self.duration * self.fps) }
     public let isStereoscopic: Bool
+
     public init(duration: Double, fps: Double, size: CGSize, isStereoscopic: Bool = false) {
         self.duration = duration
         self.fps = min(fps, 240)
@@ -51,7 +53,7 @@ public struct VideoInfo: Sendable {
     }
 
     public init(url: URL) async throws {
-        let asset = AVAsset(url: url)
+        let asset: AVAsset = .init(url: url)
         try await self.init(asset: asset)
     }
 
@@ -69,12 +71,12 @@ public struct VideoInfo: Sendable {
         guard let videoTrack = try await avAsset.loadTracks(withMediaType: .video).first else {
             return false
         }
-        /// First attempt with format description
+        // First attempt with format description
         let formatDescriptions: [CMFormatDescription] = try await videoTrack.load(.formatDescriptions)
-        for formatDescription in formatDescriptions {
-            if let extensions = CMFormatDescriptionGetExtensions(formatDescription) as? [String: Any] {
-                let hasLeftEye = extensions["HasLeftStereoEyeView"] as? Bool ?? false
-                let hasRightEye = extensions["HasRightStereoEyeView"] as? Bool ?? false
+        for formatDescription: CMFormatDescription in formatDescriptions {
+            if let extensions: [String: Any] = CMFormatDescriptionGetExtensions(formatDescription) as? [String: Any] {
+                let hasLeftEye: Bool = extensions["HasLeftStereoEyeView"] as? Bool ?? false
+                let hasRightEye: Bool = extensions["HasRightStereoEyeView"] as? Bool ?? false
                 return hasLeftEye && hasRightEye
             }
         }
@@ -99,8 +101,8 @@ public extension String {
     }
 
     internal func fill(_ char: Character, for length: Int) -> String {
-        let diff = (length - count)
-        let prefix = (diff > 0 ? String(repeating: char, count: diff) : "")
+        let diff: Int = (length - count)
+        let prefix: String = (diff > 0 ? String(repeating: char, count: diff) : "")
         return prefix + self
     }
 }
@@ -115,7 +117,7 @@ extension Double {
 
 extension Int {
     var formattedSeconds: String {
-        let formatter = DateComponentsFormatter()
+        let formatter: DateComponentsFormatter = .init()
         formatter.allowedUnits = [.second, .minute, .hour]
         formatter.zeroFormattingBehavior = .pad
         return formatter.string(from: TimeInterval(self))!
@@ -127,11 +129,11 @@ public func logBar(at index: Int, count: Int, from date: Date, length: Int = 50,
     var bar: String = ""
     bar += "["
     for i in 0 ..< length {
-        let f = Double(i) / Double(length)
+        let f: Double = .init(i) / Double(length)
         bar += f < fraction ? "=" : " "
     }
     bar += "]"
-    let percent = "\("\(Int(round(fraction * 100)))".sfill(3))%"
+    let percent: String = "\("\(Int(round(fraction * 100)))".sfill(3))%"
     let progress: String = "\("\(index + 1)".sfill("\(count)".count))/\(count)"
     let timestamp: String = (-date.timeIntervalSinceNow).formattedSeconds
     let msg: String = "\(bar)  \(percent)  \(progress)  \(timestamp)"

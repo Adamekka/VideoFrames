@@ -31,14 +31,14 @@ extension URL: ExpressibleByArgument {
 
 public extension String {
     func zfill(_ length: Int) -> String {
-        let diff = (length - count)
-        let prefix = (diff > 0 ? String(repeating: "0", count: diff) : "")
+        let diff: Int = (length - count)
+        let prefix: String = (diff > 0 ? String(repeating: "0", count: diff) : "")
         return prefix + self
     }
 
     func sfill(_ length: Int) -> String {
-        let diff = (length - count)
-        let prefix = (diff > 0 ? String(repeating: " ", count: diff) : "")
+        let diff: Int = (length - count)
+        let prefix: String = (diff > 0 ? String(repeating: " ", count: diff) : "")
         return prefix + self
     }
 }

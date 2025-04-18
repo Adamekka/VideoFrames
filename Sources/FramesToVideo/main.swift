@@ -25,7 +25,7 @@ struct VideoToFrames: ParsableCommand {
     @Option(name: .long) var kbps: Int?
 
     func run() throws {
-        let startDate = Date()
+        let startDate: Date = .init()
 
         var isDir: ObjCBool = false
         guard FileManager.default.fileExists(atPath: self.folder.path, isDirectory: &isDir) else {
@@ -64,21 +64,30 @@ struct VideoToFrames: ParsableCommand {
         }
 
         var result: Result<Void, Error>!
-        let group = DispatchGroup()
+        let group: DispatchGroup = .init()
         group.enter()
-        try convertFramesToVideo(count: imageURLs.count, image: { index in
-            let url: URL = imageURLs[index]
-            guard let image: NSImage = NSImage(contentsOf: url) else {
-                throw VideoToFramesError.imageCorrupt(url.lastPathComponent)
+        try convertFramesToVideo(
+            count: imageURLs.count,
+            image: { index in
+                let url: URL = imageURLs[index]
+                guard let image: NSImage = NSImage(contentsOf: url) else {
+                    throw VideoToFramesError.imageCorrupt(url.lastPathComponent)
+                }
+                return image
+            },
+            fps: self.fps ?? 30,
+            kbps: self.kbps ?? 1000,
+            as: videoFormat,
+            url: self.video,
+            frame: { index in
+                logBar(at: index, count: imageURLs.count, from: startDate)
+            },
+            completion: { res in
+                logBar(at: imageURLs.count - 1, count: imageURLs.count, from: startDate, clear: false)
+                result = res
+                group.leave()
             }
-            return image
-        }, fps: self.fps ?? 30, kbps: self.kbps ?? 1000, as: videoFormat, url: self.video, frame: { index in
-            logBar(at: index, count: imageURLs.count, from: startDate)
-        }, completion: { res in
-            logBar(at: imageURLs.count - 1, count: imageURLs.count, from: startDate, clear: false)
-            result = res
-            group.leave()
-        })
+        )
         group.wait()
         try result.get()
     }

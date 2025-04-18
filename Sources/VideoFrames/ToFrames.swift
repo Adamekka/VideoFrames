@@ -8,7 +8,7 @@ import AVFoundation
 
 public func convertVideoToFrames(from url: URL) async throws -> [_Image] {
     var frames: [_Image] = []
-    let asset = try await makeAsset(from: url)
+    let asset: Asset = try await makeAsset(from: url)
     for i in 0 ..< asset.info.frameCount {
         let image: _Image = try await getFrame(at: i, info: asset.info, with: asset.generator)
         frames.append(image)
@@ -24,7 +24,7 @@ public func convertVideoToFrames(
     async throws -> [_Image]
 {
     var frames: [_Image] = []
-    let asset = try await makeAsset(from: url)
+    let asset: Asset = try await makeAsset(from: url)
     frameCount?(asset.info.frameCount)
     for i in 0 ..< asset.info.frameCount {
         progress?(i)
@@ -40,8 +40,8 @@ public func convertVideoToFrames(
 )
     async throws -> AsyncThrowingStream<_Image, Error>
 {
-    let asset = try await makeAsset(from: url, info: info)
-    let frameCount = asset.info.frameCount
+    let asset: Asset = try await makeAsset(from: url, info: info)
+    let frameCount: Int = asset.info.frameCount
     return AsyncThrowingStream { stream in
         Task {
             for index in 0 ..< frameCount {
@@ -64,7 +64,7 @@ public func convertVideoToFramesWithWithHandlerSync(
 )
     async throws
 {
-    let asset = try await makeAsset(from: url)
+    let asset: Asset = try await makeAsset(from: url)
     let count: Int = asset.info.frameCount
     for i in 0 ..< count {
         let image: _Image = try await getFrame(at: i, info: asset.info, with: asset.generator)
@@ -97,6 +97,7 @@ func makeAsset(from url: URL, info: VideoInfo? = nil) async throws -> Asset {
 
 enum VideoFrameError: LocalizedError {
     case videoFrameIndexOutOfBounds(frameIndex: Int, frameCount: Int, frameRate: Double)
+
     var errorDescription: String? {
         switch self {
             case let .videoFrameIndexOutOfBounds(frameIndex, frameCount, frameRate):
@@ -106,7 +107,7 @@ enum VideoFrameError: LocalizedError {
 }
 
 public func videoFrame(at frameIndex: Int, from url: URL, info: VideoInfo? = nil) async throws -> _Image {
-    let asset = try await makeAsset(from: url, info: info)
+    let asset: Asset = try await makeAsset(from: url, info: info)
     guard frameIndex >= 0 && frameIndex < asset.info.frameCount else {
         throw VideoFrameError.videoFrameIndexOutOfBounds(
             frameIndex: frameIndex,

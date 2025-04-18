@@ -2,7 +2,7 @@
 
 import PackageDescription
 
-let package = Package(
+let package: Package = .init(
     name: "VideoFrames",
     platforms: [
         .iOS(.v15),
@@ -12,16 +12,17 @@ let package = Package(
     ],
     products: [
         .library(name: "VideoFrames", targets: ["VideoFrames"]),
-//        .executable(name: "VideoToFrames", targets: ["VideoToFrames"]),
-//        .executable(name: "FramesToVideo", targets: ["FramesToVideo"]),
+        // .executable(name: "VideoToFrames", targets: ["VideoToFrames"]),
+        // .executable(name: "FramesToVideo", targets: ["FramesToVideo"]),
     ],
     dependencies: [
-        //        .package(url: "https://github.com/apple/swift-argument-parser", from: "0.0.1"),
+        // .package(url: "https://github.com/apple/swift-argument-parser", from: "0.0.1"),
     ],
     targets: [
         .target(name: "VideoFrames", dependencies: []),
-//        .target(name: "VideoToFrames", dependencies: ["VideoFrames", "ArgumentParser"]),
-//        .target(name: "FramesToVideo", dependencies: ["VideoFrames", "ArgumentParser"]),
+        // .target(name: "VideoToFrames", dependencies: ["VideoFrames", "ArgumentParser"]),
+        // .target(name: "FramesToVideo", dependencies: ["VideoFrames", "ArgumentParser"]),
+
         .testTarget(name: "VideoFramesTests", dependencies: ["VideoFrames"]),
     ]
 )

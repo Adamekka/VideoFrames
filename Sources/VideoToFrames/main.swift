@@ -17,19 +17,30 @@ enum ImageFormat {
     case png
     case jpg(Double)
     case tiff
+
     var ext: String {
         switch self {
-            case .png: "png"
-            case .jpg: "jpg"
-            case .tiff: "tiff"
+            case .png:
+                "png"
+
+            case .jpg:
+                "jpg"
+
+            case .tiff:
+                "tiff"
         }
     }
 
     var storageType: NSBitmapImageRep.FileType {
         switch self {
-            case .png: .png
-            case .jpg: .jpeg
-            case .tiff: .tiff
+            case .png:
+                .png
+
+            case .jpg:
+                .jpeg
+
+            case .tiff:
+                .tiff
         }
     }
 
@@ -37,6 +48,7 @@ enum ImageFormat {
         switch self {
             case let .jpg(quality):
                 [.compressionFactor: quality]
+
             default:
                 [:]
         }
@@ -57,7 +69,7 @@ struct VideoToFrames: ParsableCommand {
     @Flag() var force: Bool
 
     func run() throws {
-        let startDate = Date()
+        let startDate: Date = .init()
 
         guard FileManager.default.fileExists(atPath: self.video.path) else {
             throw VideoToFramesError.videoNotFound
@@ -82,7 +94,7 @@ struct VideoToFrames: ParsableCommand {
             throw VideoToFramesError.unsupportedImageFormat
         }
 
-        try convertVideoToFramesSync(from: self.video, force: self.force, frame: { image, index, count in
+        try convertVideoToFramesSync(from: self.video, force: self.force) { image, index, count in
             logBar(at: index, count: count, from: startDate)
             let name: String = "\(videoName)_\("\(index)".zfill(6)).\(imageFormat.ext)"
             let url: URL = self.folder.appendingPathComponent(name)
@@ -104,7 +116,7 @@ struct VideoToFrames: ParsableCommand {
             if index + 1 == count {
                 logBar(at: index, count: count, from: startDate, clear: false)
             }
-        })
+        }
     }
 }
 

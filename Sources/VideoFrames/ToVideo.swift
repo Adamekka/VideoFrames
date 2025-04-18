@@ -26,10 +26,14 @@ public extension ToVideoError {
 public enum VideoFormat: String, CaseIterable, Sendable {
     case mov
     case mp4
+
     public var fileType: AVFileType {
         switch self {
-            case .mov: .mov
-            case .mp4: .mp4
+            case .mov:
+                .mov
+
+            case .mp4:
+                .mp4
         }
     }
 }
@@ -39,10 +43,12 @@ public enum VideoFormat: String, CaseIterable, Sendable {
 public enum VideoCodec: String, CaseIterable, Sendable {
     case h264
     case proRes
+
     public var codec: AVVideoCodecType {
         switch self {
             case .h264:
                 return .h264
+
             case .proRes:
                 #if os(visionOS)
                     print("VideoFrames - Warning: ProRes is not supported on visionOS. Using h264.")
@@ -70,14 +76,14 @@ public func convertFramesToVideo(
     let firstImage: _Image = images.first!
     let resolution: CGSize = firstImage.size
 
-    let videoFrames = images.map { VideoFrame(image: $0) }
+    let videoFrames: [VideoFrame] = images.map { VideoFrame(image: $0) }
 
     final class ContinuationWrapper: @unchecked Sendable {
         var continuation: AsyncStream<VideoFrame>.Continuation? = nil
     }
 
-    let continuation = ContinuationWrapper()
-    let stream = AsyncStream<VideoFrame> {
+    let continuation: ContinuationWrapper = .init()
+    let stream: AsyncStream<VideoFrame> = AsyncStream<VideoFrame> {
         continuation.continuation = $0
     }
 
@@ -118,14 +124,14 @@ public func convertFramesToVideo(
     precondition(fps > 0)
     precondition(kbps > 0)
 
-    let writer = try AVAssetWriter(url: url, fileType: format.fileType)
+    let writer: AVAssetWriter = try AVAssetWriter(url: url, fileType: format.fileType)
 
     let bps: Int = kbps * 1000
 
     // FPS (29,97 / 999) * 1000 == 30
     // FPS (29,7 / 99) * 100 == 30
 
-    let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
+    let input: AVAssetWriterInput = .init(mediaType: .video, outputSettings: [
         AVVideoCodecKey: codec.codec,
         AVVideoWidthKey: resolution.width,
         AVVideoHeightKey: resolution.height,
@@ -136,7 +142,7 @@ public func convertFramesToVideo(
 
     writer.add(input)
 
-    let adaptor = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: input, sourcePixelBufferAttributes: [
+    let adaptor: AVAssetWriterInputPixelBufferAdaptor = .init(assetWriterInput: input, sourcePixelBufferAttributes: [
         kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32ARGB),
         kCVPixelBufferWidthKey as String: resolution.width,
         kCVPixelBufferHeightKey as String: resolution.height,
@@ -149,7 +155,7 @@ public func convertFramesToVideo(
         return
     }
 
-    let queue = DispatchQueue(label: "video-frames")
+    let queue: DispatchQueue = .init(label: "video-frames")
 
     let _: Void = try await withCheckedThrowingContinuation { continuation in
         input.requestMediaDataWhenReady(on: queue) {
@@ -208,7 +214,7 @@ func getPixelBuffer(from cgImage: CGImage) throws -> CVPixelBuffer {
         kCVPixelBufferCGBitmapContextCompatibilityKey: kCFBooleanTrue!,
         kCVPixelBufferMetalCompatibilityKey: kCFBooleanTrue!,
     ]
-    let status = CVPixelBufferCreate(
+    let status: CVReturn = CVPixelBufferCreate(
         kCFAllocatorDefault,
         cgImage.width,
         cgImage.height,
@@ -219,7 +225,7 @@ func getPixelBuffer(from cgImage: CGImage) throws -> CVPixelBuffer {
     guard status == kCVReturnSuccess, let pixelBuffer = maybePixelBuffer else {
         throw VideoFramesError.framePixelBuffer("CVPixelBufferCreate failed with status \(status)")
     }
-    let flags = CVPixelBufferLockFlags(rawValue: 0)
+    let flags: CVPixelBufferLockFlags = .init(rawValue: 0)
     guard kCVReturnSuccess == CVPixelBufferLockBaseAddress(pixelBuffer, flags) else {
         throw VideoFramesError.framePixelBuffer("CVPixelBufferLockBaseAddress failed.")
     }
