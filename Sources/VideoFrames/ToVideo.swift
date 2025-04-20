@@ -67,9 +67,8 @@ public func convertFramesToVideo(
     format: VideoFormat = .mov,
     codec: VideoCodec = .h264,
     url: URL,
-    frame: (@Sendable (Int) -> Void)? = nil
 )
-    async throws
+    throws
 {
     precondition(!images.isEmpty)
 
@@ -78,40 +77,19 @@ public func convertFramesToVideo(
 
     let videoFrames: [VideoFrame] = images.map { VideoFrame(image: $0) }
 
-    final class ContinuationWrapper: @unchecked Sendable {
-        var continuation: AsyncStream<VideoFrame>.Continuation? = nil
-    }
-
-    let continuation: ContinuationWrapper = .init()
-    let stream: AsyncStream<VideoFrame> = AsyncStream<VideoFrame> {
-        continuation.continuation = $0
-    }
-
-    try await withThrowingTaskGroup(of: Void.self) { group in
-        group.addTask {
-            try await convertFramesToVideo(
-                stream: stream,
-                resolution: resolution,
-                fps: fps,
-                kbps: kbps,
-                format: format,
-                codec: codec,
-                url: url
-            )
-        }
-        group.addTask {
-            for (index, videoFrame) in videoFrames.enumerated() {
-                frame?(index)
-                continuation.continuation?.yield(videoFrame)
-            }
-            continuation.continuation?.finish()
-        }
-        try await group.waitForAll()
-    }
+    try convertFramesToVideo(
+        videoFrames: videoFrames,
+        resolution: resolution,
+        fps: fps,
+        kbps: kbps,
+        format: format,
+        codec: codec,
+        url: url
+    )
 }
 
 public func convertFramesToVideo(
-    stream: AsyncStream<VideoFrame>,
+    videoFrames: [VideoFrame],
     resolution: CGSize,
     fps: Double = 30.0,
     kbps: Int = 10000,
@@ -119,7 +97,7 @@ public func convertFramesToVideo(
     codec: VideoCodec = .h264,
     url: URL
 )
-    async throws
+    throws
 {
     precondition(fps > 0)
     precondition(kbps > 0)
@@ -157,34 +135,34 @@ public func convertFramesToVideo(
 
     let queue: DispatchQueue = .init(label: "video-frames")
 
-    let _: Void = try await withCheckedThrowingContinuation { continuation in
-        input.requestMediaDataWhenReady(on: queue) {
-            Task {
-                do {
-                    var frameIndex: Int = 0
-                    for await videoFrame in stream {
-                        guard input.isReadyForMoreMediaData else {
-                            throw ToVideoError.notReadyForMoreMediaData
-                        }
-                        let time: CMTime = CMTimeMake(
-                            value: Int64(frameIndex * 1000),
-                            timescale: Int32(fps * 1000)
-                        )
-                        let pixelBuffer: CVPixelBuffer = try getPixelBuffer(from: videoFrame.image)
-                        adaptor.append(pixelBuffer, withPresentationTime: time)
-                        frameIndex += 1
-                    }
-                    input.markAsFinished()
-                    writer.finishWriting {
-                        if let error = writer.error {
-                            continuation.resume(throwing: error)
-                            return
-                        }
-                        continuation.resume()
-                    }
-                } catch {
-                    continuation.resume(throwing: error)
+    input.requestMediaDataWhenReady(on: queue) {
+        var frameIndex: Int = 0
+
+        do {
+            for videoFrame: VideoFrame in videoFrames {
+                while !input.isReadyForMoreMediaData {
+                    //
                 }
+
+                let time: CMTime = .init(
+                    value: Int64(frameIndex * 1000),
+                    timescale: Int32(fps * 1000)
+                )
+
+                let pixelBuffer: CVPixelBuffer = try getPixelBuffer(from: videoFrame.image)
+
+                adaptor.append(pixelBuffer, withPresentationTime: time)
+                frameIndex += 1
+            }
+        } catch {
+            print(error)
+        }
+
+        input.markAsFinished()
+
+        writer.finishWriting {
+            if let error: Error = writer.error {
+                print(error)
             }
         }
     }

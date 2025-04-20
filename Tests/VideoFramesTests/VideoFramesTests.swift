@@ -60,13 +60,13 @@ final class VideoFramesTests: XCTestCase {
                 XCTAssert(false)
                 return
             }
-            let url: URL = self.repoURL.appendingPathComponent("Resources/TestVideoOut.mov")
+            let url: URL = self.repoURL.appendingPathComponent("Resources/TestVideoOut.mp4")
             try? FileManager.default.removeItem(at: url)
-            try? await convertFramesToVideo(images: frames, fps: 30, url: url)
+            try? convertFramesToVideo(images: frames, fps: 30, url: url)
             XCTAssert(FileManager.default.fileExists(atPath: url.path))
         }
 
-        static let allTests: [(String, @Sendable (VideoFramesTests) -> () async -> Void)] = [
+        @MainActor static let allTests: [(String, (VideoFramesTests) -> () async -> Void)] = [
             ("testConvertVideoToFrames", testConvertVideoToFrames),
             ("testConvertFramesToVideo", testConvertFramesToVideo),
         ]
