@@ -62,7 +62,14 @@ public func convertVideoToFramesWithWithHandlerSync(from url: URL, frame: (_Imag
 // MARK: - Asset
 
 func makeAsset(from url: URL, info: VideoInfo? = nil) async throws -> Asset {
-    guard FileManager.default.fileExists(atPath: url.path) else {
+    var url = url
+    if url.isFileURL {
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            throw VideoFramesError.videoNotFound
+        }
+    } else if let scheme = url.scheme, scheme == "http" || scheme == "https" {
+        url = try await downloadToTemporaryFile(from: url)
+    } else {
         throw VideoFramesError.videoNotFound
     }
     let asset: AVAsset = AVAsset(url: url)
@@ -77,6 +84,17 @@ func makeAsset(from url: URL, info: VideoInfo? = nil) async throws -> Asset {
     generator.requestedTimeToleranceBefore = .zero //CMTime(value: CMTimeValue(1), timescale: CMTimeScale(videoInfo.fps))
     generator.requestedTimeToleranceAfter = .zero //CMTime(value: CMTimeValue(1), timescale: CMTimeScale(videoInfo.fps))
     return Asset(info: videoInfo, generator: generator)
+}
+
+private func downloadToTemporaryFile(from remoteURL: URL) async throws -> URL {
+    let (tempURL, _) = try await URLSession.shared.download(from: remoteURL)
+    let suggestedExt = remoteURL.pathExtension.isEmpty ? "mp4" : remoteURL.pathExtension
+    let destinationURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString)
+        .appendingPathExtension(suggestedExt)
+    try? FileManager.default.removeItem(at: destinationURL)
+    try FileManager.default.moveItem(at: tempURL, to: destinationURL)
+    return destinationURL
 }
 
 // MARK: - Frame
